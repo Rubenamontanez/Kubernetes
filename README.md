@@ -29,4 +29,24 @@ Master node has three components
 -Controller Manager- runs the controllers. These are background threads that run task in a cluster. Roles include Node Controller, responsible for the worker states. the Repication Controller, responsible for maintaning the correct number of Pods for the replicated controller. End-Point Controller joins the services and Pods together.
 -etcd - simple distributed key value stored. Kubernetes uses etcd as its database and stores all cluster data here. 
 
-kubeadm join 172.31.29.189:6443 --token 6e7syc.mc5ltw57x66z4rlu --discovery-token-ca-cert-hash sha256:67ea0f26bbf999c08fc41997acb78cb18ca5a7f1ebe2b356c153ea5af6d2fe99 
+Labels 
+- Key-value pairs attached to Kubernetes objects (e.g. Pods, ReplicaSets). 
+- Used to organize and select a subset of objects, based on the requirements in place. Many objects can have the same Label(s). 
+- Do not provide uniqueness to objects. 
+- Controllers use Labels to logically group together decoupled objects, rather than using objects' names or IDs.
+
+ReplicaSets
+-  ReplicaSets support both equality- and set-based selectors. We can scale the number of Pods running a specific container application image. Scaling can be accomplished manually or through the use of an autoscaler.
+- The ReplicaSet will detect that the current state is no longer matching the desired state. The ReplicaSet will create an additional Pod, thus ensuring that the current state matches the desired state.
+- ReplicaSets can be used independently as Pod controllers but they only offer a limited set of features. A set of complementary features are provided by Deployments, the recommended controllers for the orchestration of Pods. Deployments manage the creation, deletion, and updates of Pods. A Deployment automatically creates a ReplicaSet, which then creates a Pod. There is no need to manage ReplicaSets and Pods separately, the Deployment will manage them on our behalf.
+
+Deployments: represent a set of multiple, identical Pods with no unique identities. A Deployment runs multiple replicas of your application and automatically replaces any instances that fail or become unresponsive. ... Deployments are managed by the Kubernetes Deployment controller.
+- Deployment objects provide declarative updates to Pods and ReplicaSets. The DeploymentController is part of the master node's controller manager, and it ensures that the current state always matches the desired state. It allows for seamless application updates and downgrades through rollouts and rollbacks, and it directly manages its ReplicaSets for application scaling. 
+- In Deployment, we change the Pods' Template and we update the container image from nginx:1.7.9 to nginx:1.9.1. The Deployment triggers a new ReplicaSet B for the new container image versioned 1.9.1 and this association represents a new recorded state of the Deployment, Revision 2. The seamless transition between the two ReplicaSets, from ReplicaSet A with 3 Pods versioned 1.7.9 to the new ReplicaSet B with 3 new Pods versioned 1.9.1, or from Revision 1 to Revision 2, is a Deployment rolling update. A rolling update is triggered when we update the Pods Template for a deployment. Operations like scaling or labeling the deployment do not trigger a rolling update, thus do not change the Revision number. Once the rolling update has completed, the Deployment will show both ReplicaSets A and B, where A is scaled to 0 (zero) Pods, and B is scaled to 3 Pods. This is how the Deployment records its prior state configuration settings, as Revisions. 
+- Once ReplicaSet B and its 3 Pods versioned 1.9.1 are ready, the Deployment starts actively managing them. However, the Deployment keeps its prior configuration states saved as Revisions which play a key factor in the rollback capability of the Deployment - returning to a prior known configuration state. In our example, if the performance of the new nginx:1.9.1 is not satisfactory, the Deployment can be rolled back to a prior Revision, in this case from Revision 2 back to Revision 1 running nginx:1.7.9. 
+
+Namespaces: Namespaces are a way to divide cluster resources between multiple users (via resource quota). In future versions of Kubernetes, objects in the same namespace will have the same access control policies by default.
+- Generally, Kubernetes creates four default Namespaces: kube-system, kube-public, kube-node-lease, and default. The kube-system Namespace contains the objects created by the Kubernetes system, mostly the control plane agents. The default Namespace contains the objects and resources created by administrators and developers. By default, we connect to the default Namespace. kube-public is a special Namespace, which is unsecured and readable by anyone, used for special purposes such as exposing public (non-sensitive) information about the cluster. The newest Namespace is kube-node-lease which holds node lease objects used for node heartbeat data. Good practice, however, is to create more Namespaces to virtualize the cluster for users and developer teams.
+
+ 
+
