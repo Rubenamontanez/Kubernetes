@@ -29,6 +29,7 @@ Master node has three components
 -Controller Manager- runs the controllers. These are background threads that run task in a cluster. Roles include Node Controller, responsible for the worker states. the Repication Controller, responsible for maintaning the correct number of Pods for the replicated controller. End-Point Controller joins the services and Pods together.
 -etcd - simple distributed key value stored. Kubernetes uses etcd as its database and stores all cluster data here. 
 
+
 Labels 
 - Key-value pairs attached to Kubernetes objects (e.g. Pods, ReplicaSets). 
 - Used to organize and select a subset of objects, based on the requirements in place. Many objects can have the same Label(s). 
@@ -47,6 +48,30 @@ Deployments: represent a set of multiple, identical Pods with no unique identiti
 
 Namespaces: Namespaces are a way to divide cluster resources between multiple users (via resource quota). In future versions of Kubernetes, objects in the same namespace will have the same access control policies by default.
 - Generally, Kubernetes creates four default Namespaces: kube-system, kube-public, kube-node-lease, and default. The kube-system Namespace contains the objects created by the Kubernetes system, mostly the control plane agents. The default Namespace contains the objects and resources created by administrators and developers. By default, we connect to the default Namespace. kube-public is a special Namespace, which is unsecured and readable by anyone, used for special purposes such as exposing public (non-sensitive) information about the cluster. The newest Namespace is kube-node-lease which holds node lease objects used for node heartbeat data. Good practice, however, is to create more Namespaces to virtualize the cluster for users and developer teams.
+
+Authentication, Authorization, and Admission Control: To access and manage any Kubernetes resource or object in the cluster, we need to access a specific API endpoint on the API server. Each access request goes through the following three stages:
+Authentication: Logs in a user. Kubernetes does not have an object called user, nor does it store usernames or other related details in its object store. However, even without that, Kubernetes can use usernames for access control and request logging
+- Two kinds of users: Normal Users-They are managed outside of the Kubernetes cluster via independent services like User/Client Certificates, a file listing usernames/passwords, Google accounts, etc. Service Accounts- With Service Account users, in-cluster processes communicate with the API server to perform different operations. Most of the Service Account users are created automatically via the API server, but they can also be created manually. The Service Account users are tied to a given Namespace and mount the respective credentials to communicate with the API server as Secrets.
+For authentication, Kubernetes uses different authentication modules:
+Client Certificates
+To enable client certificate authentication, we need to reference a file containing one or more certificate authorities by passing the --client-ca-file=SOMEFILE option to the API server. The certificate authorities mentioned in the file would validate the client certificates presented to the API server. A demonstration video covering this topic is also available at the end of this chapter.
+Static Token File
+We can pass a file containing pre-defined bearer tokens with the --token-auth-file=SOMEFILE option to the API server. Currently, these tokens would last indefinitely, and they cannot be changed without restarting the API server.
+Bootstrap Tokens
+This feature is currently in beta status and is mostly used for bootstrapping a new Kubernetes cluster.
+Static Password File
+It is similar to Static Token File. We can pass a file containing basic authentication details with the --basic-auth-file=SOMEFILE option. These credentials would last indefinitely, and passwords cannot be changed without restarting the API server.
+Service Account Tokens
+This is an automatically enabled authenticator that uses signed bearer tokens to verify the requests. These tokens get attached to Pods using the ServiceAccount Admission Controller, which allows in-cluster processes to talk to the API server.
+OpenID Connect Tokens
+OpenID Connect helps us connect with OAuth2 providers, such as Azure Active Directory, Salesforce, Google, etc., to offload the authentication to external services.
+Webhook Token Authentication
+With Webhook-based authentication, verification of bearer tokens can be offloaded to a remote service.
+Authenticating Proxy
+If we want to program additional authentication logic, we can use an authenticating proxy.
+Authorization: Authorizes the API requests added by the logged-in user.
+
+Admission Control: Software modules that can modify or reject the requests based on some additional checks, like a pre-set Quota.
 
  
 
